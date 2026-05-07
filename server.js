@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -12,16 +13,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// ─── Routes ───
+// ─── API Routes ───
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/auth', authRoutes);
 
-// ─── Health Check ───
+// ─── Static frontend (homepage-guest, homepage-staff, guest-dashboard, …)
+app.use(express.static(path.join(__dirname, 'frontend')));
+
 app.get('/', (req, res) => {
-  res.json({
-    message: '🎫 Ticketing System API is running!',
-    status: 'OK'
-  });
+  res.redirect(302, '/homepage-guest/');
 });
 
 // ─── Start Server ───
