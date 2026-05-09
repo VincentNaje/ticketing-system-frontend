@@ -1,12 +1,643 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reports and Status</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Status - Track Ticket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background: #e8e8e8;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 180px;
+            background: linear-gradient(180deg, #0047AB 0%, #1e40af 50%, #1e3a8a 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 40px 20px 30px;
+            text-align: center;
+        }
+
+        .user-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-avatar svg {
+            width: 50px;
+            height: 50px;
+            fill: rgba(255, 255, 255, 0.8);
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 10px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .menu-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .logout-btn {
+            padding: 16px 20px;
+            background: none;
+            border: none;
+            color: #FF6B6B;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: block;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 107, 107, 0.15);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e8e8e8;
+        }
+
+        /* Top Header */
+        .top-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .bu-logo {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+        }
+
+        .page-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            background: linear-gradient(135deg, #0047AB 0%, #1e3a8a 100%);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 50px;
+        }
+
+        /* Ticket Card */
+        .ticket-card {
+            background: white;
+            border-radius: 15px;
+            padding: 0;
+            max-width: 850px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* Ticket Header - Top section with Subject, Category, Submitted */
+        .ticket-header {
+            background: #f8f9fa;
+            padding: 25px 30px;
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1.3fr;
+            gap: 25px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .ticket-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        .field-value {
+            font-size: 14px;
+            color: #222;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        /* Ticket Body - Contains status and timeline */
+        .ticket-body {
+            padding: 30px;
+        }
+
+        /* Status Section */
+        .status-section {
+            --status-bg-1: #e3f2fd;
+            --status-bg-2: #bbdefb;
+            --status-accent: #2196f3;
+            --status-text: #1565c0;
+            --status-muted: #1976d2;
+            background: linear-gradient(135deg, var(--status-bg-1) 0%, var(--status-bg-2) 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--status-accent);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-icon {
+            width: 55px;
+            height: 55px;
+            background: var(--status-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .status-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: var(--status-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .status-title {
+            font-size: 22px;
+            color: var(--status-text);
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .status-description {
+            color: var(--status-muted);
+            font-size: 13px;
+        }
+
+        .status-submitted {
+            --status-bg-1: #e3f2fd;
+            --status-bg-2: #bbdefb;
+            --status-accent: #2196f3;
+            --status-text: #1565c0;
+            --status-muted: #1976d2;
+        }
+
+        .status-under-review {
+            --status-bg-1: #fff8e1;
+            --status-bg-2: #ffe082;
+            --status-accent: #f6b100;
+            --status-text: #7c5a00;
+            --status-muted: #9c6f00;
+        }
+
+        .status-in-progress {
+            --status-bg-1: #fff3e0;
+            --status-bg-2: #ffcc80;
+            --status-accent: #f57c00;
+            --status-text: #bf5b00;
+            --status-muted: #e26a00;
+        }
+
+        .status-resolved {
+            --status-bg-1: #e8f5e9;
+            --status-bg-2: #b9f6ca;
+            --status-accent: #00a86b;
+            --status-text: #00754b;
+            --status-muted: #008f5d;
+        }
+
+        /* Timeline */
+        .timeline {
+            --timeline-active: #4CAF50;
+            position: relative;
+            padding-left: 45px;
+            margin-bottom: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -36px;
+            top: 5px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #e0e0e0;
+        }
+
+        .timeline-item.completed::before {
+            background: var(--timeline-active);
+            border-color: var(--timeline-active);
+        }
+
+        .timeline-item.active::before {
+            background: var(--timeline-active);
+            border-color: var(--timeline-active);
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .timeline-subtitle {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Ticket Number */
+        .ticket-number {
+            padding-top: 25px;
+            border-top: 2px solid #f0f0f0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .ticket-number strong {
+            color: #333;
+        }
+
+        .status-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .status-controls label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            letter-spacing: 0.2px;
+        }
+
+        .status-controls select {
+            border: 1px solid #d0d7e2;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 13px;
+            min-width: 160px;
+            background: #fff;
+            color: #2d3748;
+        }
+
+        @media (max-width: 968px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .sidebar-header {
+                padding: 20px;
+            }
+
+            .sidebar-menu {
+                display: flex;
+                overflow-x: auto;
+            }
+
+            .menu-item {
+                white-space: nowrap;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+
+            .ticket-header {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .status-controls {
+                justify-content: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Reports and Status</h1>
-  <p>Page scaffold created. Add report summaries and status monitoring here.</p>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="user-avatar">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            </div>
+            <div class="user-name">Guest User 781</div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="#" class="menu-item">
+                <svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="#" class="menu-item active">
+                <svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+                <span>Reports & Status</span>
+            </a>
+        </nav>
+
+        <button class="logout-btn">Log Out</button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <img src="assets/BU_logo.png" alt="BU Logo" class="bu-logo">
+            <h1 class="page-title">Track Your Ticket Status</h1>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="ticket-card">
+                <!-- Ticket Header: Subject, Category, Submitted -->
+                <div class="ticket-header">
+                    <div class="ticket-field">
+                        <span class="field-label">Subject</span>
+                        <span class="field-value">Broken air conditioning in Room 301</span>
+                    </div>
+                    <div class="ticket-field">
+                        <span class="field-label">Category</span>
+                        <span class="field-value">Facilities & Cleanliness</span>
+                    </div>
+                    <div class="ticket-field">
+                        <span class="field-label">Submitted</span>
+                        <span class="field-value">Apr 30, 2025 at 2:34 PM</span>
+                    </div>
+                </div>
+
+                <!-- Ticket Body: Status and Timeline -->
+                <div class="ticket-body">
+                    <div class="status-controls">
+                        <label for="status-preview">Status preview</label>
+                        <select id="status-preview" aria-label="Select current status">
+                            <option value="submitted">Submitted</option>
+                            <option value="under-review">Under Review</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="resolved">Issue / Concern Resolved</option>
+                        </select>
+                    </div>
+
+                    <!-- Current Status -->
+                    <div class="status-section status-submitted">
+                        <div class="status-header">
+                            <div class="status-icon">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="status-text">
+                                <div class="status-label">Current Status</div>
+                                <div class="status-title">Submitted</div>
+                                <div class="status-description">Your concern is being evaluated by our staff</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="timeline">
+                        <div class="timeline-item completed active">
+                            <div class="timeline-title">Submitted</div>
+                            <div class="timeline-subtitle">Apr 30, 2025 at 2:34 PM</div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-title">Under Review</div>
+                            <div class="timeline-subtitle">Being evaluated by staff</div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-title">In Progress</div>
+                            <div class="timeline-subtitle">Resolving issues</div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-title">Resolved</div>
+                            <div class="timeline-subtitle"></div>
+                        </div>
+                    </div>
+
+                    <!-- Ticket Number -->
+                    <div class="ticket-number">
+                        <strong>Ticket number:</strong> TKT-2025-00482
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const STATUS_ORDER = ['submitted', 'under-review', 'in-progress', 'resolved'];
+
+        const STATUS_META = {
+            submitted: {
+                title: 'Submitted',
+                description: 'Your concern is being evaluated by our staff',
+                icon: '<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>',
+                timelineColor: '#2196f3'
+            },
+            'under-review': {
+                title: 'Under Review',
+                description: 'Your report is currently being reviewed by our team',
+                icon: '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-2h2zm0-4h-2V7h2z"></path>',
+                timelineColor: '#f6b100'
+            },
+            'in-progress': {
+                title: 'In Progress',
+                description: 'Our staff is actively resolving your concern',
+                icon: '<path d="M13 3a9 9 0 1 0 8.95 10h-2.02a7 7 0 1 1-1.9-4.24L14 13h7V6l-2.57 2.57A8.96 8.96 0 0 0 13 3z"></path>',
+                timelineColor: '#f57c00'
+            },
+            resolved: {
+                title: 'Issue / Concern Resolved',
+                description: 'Your concern has been addressed and completed',
+                icon: '<path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z"></path>',
+                timelineColor: '#00a86b'
+            }
+        };
+
+        // Update card + timeline visuals based on current status.
+        function updateTicketStatus(status) {
+            const normalized = (status || '').toLowerCase();
+            const statusKey = STATUS_META[normalized] ? normalized : 'submitted';
+            const currentIndex = STATUS_ORDER.indexOf(statusKey);
+
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach((item, index) => {
+                item.classList.remove('completed', 'active');
+                
+                if (index < currentIndex) {
+                    item.classList.add('completed');
+                } else if (index === currentIndex) {
+                    item.classList.add('completed', 'active');
+                }
+            });
+
+            const statusSection = document.querySelector('.status-section');
+            statusSection.className = `status-section status-${statusKey}`;
+
+            const statusConfig = STATUS_META[statusKey];
+            document.querySelector('.ticket-body').style.setProperty('--timeline-active', statusConfig.timelineColor);
+
+            const icon = document.querySelector('.status-icon svg');
+            icon.innerHTML = statusConfig.icon;
+            document.querySelector('.status-title').textContent = statusConfig.title;
+            document.querySelector('.status-description').textContent = statusConfig.description;
+
+            const previewSelect = document.getElementById('status-preview');
+            if (previewSelect.value !== statusKey) {
+                previewSelect.value = statusKey;
+            }
+        }
+
+        // Load ticket data from backend
+        async function loadTicketStatus(ticketId) {
+            try {
+                // TODO: Replace with actual API endpoint
+                // const response = await fetch(`/api/tickets/${ticketId}`);
+                // const data = await response.json();
+                
+                // Example data structure:
+                // {
+                //   subject: "Broken air conditioning in Room 301",
+                //   category: "Facilities & Cleanliness",
+                //   submitted: "Apr 30, 2025 at 2:34 PM",
+                //   status: "submitted",
+                //   ticketNumber: "TKT-2025-00482"
+                // }
+                
+                // updateTicketStatus(data.status);
+                
+                console.log('Loading ticket:', ticketId);
+            } catch (error) {
+                console.error('Error loading ticket:', error);
+            }
+        }
+
+        document.getElementById('status-preview').addEventListener('change', (event) => {
+            updateTicketStatus(event.target.value);
+        });
+
+        // Initialize with the default frontend preview state.
+        updateTicketStatus('under-review');
+        // loadTicketStatus('TKT-2025-00482');
+    </script>
 </body>
 </html>

@@ -1,80 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guest dashboard — Complaint & Ticketing</title>
-  <link rel="stylesheet" href="../assets/css/main.css" />
+
 </head>
+
 <body>
-  <header class="site-header">
-    <div class="shell site-header__inner">
-      <a class="brand" href="../homepage-guest/">
-        <span class="brand__mark" aria-hidden="true">◎</span>
-        <span>DeskLine</span>
-      </a>
-      <nav class="nav" aria-label="Primary">
-        <a href="../homepage-guest/">Guest home</a>
-        <a href="./" aria-current="page">Dashboard</a>
-        <a href="../homepage-staff/">Staff portal</a>
-      </nav>
-    </div>
-  </header>
 
-  <main class="shell shell--wide dash-layout" style="padding-top: 2rem;">
-    <div>
-      <h1 class="page-title">Guest dashboard</h1>
-      <p class="page-intro">
-        Submit a new ticket (<code>POST /api/tickets/submit</code>) or look up an existing one by code (<code>GET /api/tickets/track/:ticket_code</code>).
-      </p>
-
-      <article class="card panel--dashboard">
-        <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">New ticket</h2>
-        <div id="submit-alert" class="alert" role="status"></div>
-        <form id="form-submit-ticket" class="form-stack">
-          <div>
-            <label class="label" for="category_id">Category ID</label>
-            <input id="category_id" name="category_id" type="text" required placeholder="UUID or ID from your categories table" spellcheck="false" />
-            <p class="helper">Must match <code>category_id</code> in Supabase <code>categories</code>. Add a public categories API later for a dropdown.</p>
-          </div>
-          <div>
-            <label class="label" for="subject">Subject</label>
-            <input id="subject" name="subject" type="text" required maxlength="200" placeholder="Short summary" />
-          </div>
-          <div>
-            <label class="label" for="description">Description</label>
-            <textarea id="description" name="description" required placeholder="What happened? What do you need?"></textarea>
-          </div>
-          <div>
-            <label class="label" for="submitter_email">Your email <span style="font-weight: 400; color: var(--text-muted);">(optional)</span></label>
-            <input id="submitter_email" name="submitter_email" type="email" autocomplete="email" placeholder="For follow-up only" />
-          </div>
-          <button type="submit" class="btn btn--primary">Submit ticket</button>
-        </form>
-      </article>
-    </div>
-
-    <aside>
-      <article class="card">
-        <h2 style="margin: 0 0 1rem; font-size: 1.05rem;">Track ticket</h2>
-        <div id="track-alert" class="alert" role="status"></div>
-        <form id="form-track-ticket" class="form-stack">
-          <div>
-            <label class="label" for="ticket_code">Ticket code</label>
-            <input id="ticket_code" name="ticket_code" type="text" required placeholder="e.g. TKT-2026-ABCDEF" autocomplete="off" spellcheck="false" />
-          </div>
-          <button type="submit" class="btn btn--ghost btn--block">Lookup</button>
-        </form>
-        <div id="track-result" class="track-result" aria-live="polite"></div>
-      </article>
-    </aside>
-  </main>
-
-  <footer class="footer-min">
-    <div class="shell">Guest-facing tools · No login required</div>
-  </footer>
-
-  <script src="../assets/js/config.js"></script>
-  <script src="../assets/js/guest-dashboard.js"></script>
 </body>
+
 </html>
