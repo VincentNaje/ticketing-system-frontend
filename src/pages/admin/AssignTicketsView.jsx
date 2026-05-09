@@ -476,8 +476,23 @@ export default function AssignTicketsView() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
           <span className="text-sm font-medium">Filter:</span>
         </div>
+        {/* Category dropdown */}
         <CustomSelect options={categoryOptions.map(c => ({ label: c === 'all' ? 'All Categories' : c, value: c }))} value={filterCategory} onChange={setFilterCategory} placeholder="Category" minWidth="min-w-[180px]" />
-        <CustomSelect options={statusOptions.map(s => ({ label: s === 'all' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1), value: s }))} value={filterStatus} onChange={setFilterStatus} placeholder="Status" minWidth="min-w-[150px]" />
+        {/* Status dropdown – fixed to show "In Progress" instead of "In_progress" */}
+        <CustomSelect 
+          options={statusOptions.map(s => {
+            let label;
+            if (s === 'all') label = 'All Statuses';
+            else if (s === 'in_progress') label = 'In Progress';
+            else label = s.charAt(0).toUpperCase() + s.slice(1);
+            return { label, value: s };
+          })} 
+          value={filterStatus} 
+          onChange={setFilterStatus} 
+          placeholder="Status" 
+          minWidth="min-w-[150px]" 
+        />
+        {/* Priority dropdown */}
         <CustomSelect options={priorityOptions.map(p => ({ label: p === 'all' ? 'All Priorities' : p.charAt(0).toUpperCase() + p.slice(1), value: p }))} value={filterPriority} onChange={setFilterPriority} placeholder="Priority" minWidth="min-w-[150px]" />
         {hasActiveFilter && <button onClick={() => { setFilterCategory('all'); setFilterStatus('all'); setFilterPriority('all'); }} className="text-xs text-blue-600 hover:underline">Clear filters</button>}
       </div>
