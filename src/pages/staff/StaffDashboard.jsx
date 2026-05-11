@@ -224,8 +224,8 @@ function StaffTicketDetailsModal({ ticket, onClose, onUpdate }) {
   );
 }
 
-// ── Mock data (tickets with history) ─────────────────────────────────────
-const MOCK_MY_TICKETS = [
+// ── Initial mock data (moved into StaffDashboard state) ──────────────────
+const INITIAL_MOCK_TICKETS = [
   { id: 1, code: 'TKT-2026-ZBYPIG', subject: 'Unclean restroom on 2nd floor', category: 'Facilities & Cleanliness', status: 'in_progress', priority: 'urgent', assignedTo: 'Ms. Sarah Santos', created_at: '2026-04-30T01:00:00Z', updated_at: '2026-05-02T02:00:00Z', description: 'The 2nd floor restroom super dirty like kadiri.', history: [
     { action: 'Ticket Submitted', details: '', date: '2026-04-30T00:00:00Z', performedBy: 'system' },
     { action: 'Assigned to Ms. Sarah Santos', details: '', date: '2026-04-30T02:15:00Z', performedBy: 'Admin' },
@@ -237,8 +237,8 @@ const MOCK_MY_TICKETS = [
   { id: 5, code: 'TKT-2026-005', subject: 'Class scheduling conflict', category: 'Enrollment / Scheduling', status: 'open', priority: 'normal', assignedTo: 'Ms. Santos', created_at: '2026-04-29T10:00:00Z', updated_at: '2026-04-29T12:00:00Z', description: 'Two classes overlap.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Student' },
 ];
 
-// ── Main Dashboard Tab (cards, filters, pagination) ──────────────────────
-function MyDashboard({ tickets, stats }) {
+// ── Main Dashboard Tab (receives tickets, stats, and onUpdate) ─────────
+function MyDashboard({ tickets, stats, onUpdate }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -290,10 +290,6 @@ function MyDashboard({ tickets, stats }) {
     { title: 'Pending Action', value: stats.open + stats.inProgress, subtitle: 'Open or In progress', circleColor: '#FA9E01', numberColor: '#653A08', bgColor: '#FAEEDA' },
     { title: 'Resolved', value: stats.resolved, subtitle: 'Completed', circleColor: '#49A821', numberColor: '#2A530D', bgColor: '#EAF3DE' },
   ];
-
-  const handleUpdateTicket = (ticketId, updatedData) => {
-    console.log('Update ticket', ticketId, updatedData);
-  };
 
   return (
     <div className="space-y-8">
@@ -379,14 +375,19 @@ function MyDashboard({ tickets, stats }) {
         </div>
       )}
 
-      {selectedTicket && <StaffTicketDetailsModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onUpdate={handleUpdateTicket} />}
+      {selectedTicket && (
+        <StaffTicketDetailsModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 }
 
 // ── Enhanced History Log Component (with Action + Date filters) ─────────
 function HistoryLog() {
-  // Mock data for history (self-contained)
   const [history, setHistory] = useState([
     { id: 1, action: 'Ticket assigned to you', details: 'TKT-2026-001 – Unclean restroom', date: '2026-05-01T10:00:00Z', performedBy: 'Admin' },
     { id: 2, action: 'Status updated', details: 'TKT-2026-001 changed from Open to In Progress', date: '2026-05-02T14:30:00Z', performedBy: 'Admin' },
@@ -407,7 +408,6 @@ function HistoryLog() {
     });
   };
 
-  // Helper: filter by date range
   const isWithinDateRange = (dateString, range) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -452,8 +452,6 @@ function HistoryLog() {
   return (
     <div className="space-y-8">
       <div><h1 className="text-2xl font-bold text-gray-800">History Log</h1><p className="text-sm text-gray-500 mt-1">Track all your activities and ticket updates</p></div>
-
-      {/* Filter bar with Action + Date */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-1 text-gray-600">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
@@ -466,8 +464,6 @@ function HistoryLog() {
         </div>
         {hasActiveFilter && <button onClick={clearFilters} className="text-xs text-blue-600 hover:underline">Clear filters</button>}
       </div>
-
-      {/* History Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100">
@@ -495,12 +491,8 @@ function HistoryLog() {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination Footer */}
         <div className="bg-gray-50/30 px-6 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-xs text-gray-500">
-            Showing {filteredHistory.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredHistory.length)} of {filteredHistory.length} entries
-          </div>
+          <div className="text-xs text-gray-500">Showing {filteredHistory.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredHistory.length)} of {filteredHistory.length} entries</div>
           <div className="flex items-center gap-1.5">
             <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50">‹</button>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -517,10 +509,40 @@ function HistoryLog() {
   );
 }
 
-// ── Main StaffDashboard (sidebar, top bar, tab switching) ────────────────
+// ── Main StaffDashboard (sidebar, top bar, state) ────────────────────────
 export default function StaffDashboard() {
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [tickets, setTickets] = useState(INITIAL_MOCK_TICKETS);
+
+  const handleUpdateTicket = (ticketId, updatedData) => {
+    setTickets(prev =>
+      prev.map(ticket => {
+        if (ticket.id !== ticketId) return ticket;
+        const now = new Date().toISOString();
+        const historyEntry = {
+          action: 'Ticket updated by you',
+          details: `Status changed to ${updatedData.status}. Resolution notes added.`,
+          date: now,
+          performedBy: 'You'
+        };
+        return {
+          ...ticket,
+          status: updatedData.status,
+          resolutionNotes: updatedData.resolutionNotes,
+          updated_at: now,
+          history: [...(ticket.history || []), historyEntry]
+        };
+      })
+    );
+  };
+
+  const stats = {
+    total: tickets.length,
+    open: tickets.filter(t => t.status === 'open').length,
+    inProgress: tickets.filter(t => t.status === 'in_progress').length,
+    resolved: tickets.filter(t => t.status === 'resolved').length,
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -545,13 +567,9 @@ export default function StaffDashboard() {
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'dashboard' && (
             <MyDashboard
-              tickets={MOCK_MY_TICKETS}
-              stats={{
-                total: MOCK_MY_TICKETS.length,
-                open: MOCK_MY_TICKETS.filter(t => t.status === 'open').length,
-                inProgress: MOCK_MY_TICKETS.filter(t => t.status === 'in_progress').length,
-                resolved: MOCK_MY_TICKETS.filter(t => t.status === 'resolved').length,
-              }}
+              tickets={tickets}
+              stats={stats}
+              onUpdate={handleUpdateTicket}
             />
           )}
           {activeTab === 'history' && <HistoryLog />}
