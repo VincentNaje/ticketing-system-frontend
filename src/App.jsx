@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import StaffDashboard from './pages/staff/StaffDashboard';
 import LoginPage from './pages/LoginPage';
 
 function App() {
@@ -9,7 +10,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="/staff" element={<StaffDashboard />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthProvider>
   );
