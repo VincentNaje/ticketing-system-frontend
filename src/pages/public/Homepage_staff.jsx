@@ -25,11 +25,13 @@ const Homepage_staff = () => {
     const handleBackToHome = () => {
         navigate('/');
     };
-
+    const handleLogoClick = () => {
+        navigate('/');
+    };
     return (
         <div className="min-h-screen bg-gradient-to-b from-orange-200 via-blue-200 to-blue-400">
             {/* Top Navigation Bar */}
-            <div className="bg-orange-500 px-6 py-3 flex items-center justify-between shadow-lg">
+            <div className="bg-orange-600 px-6 py-4 flex items-center justify-between shadow-lg">
                 {/* Logo and Title */}
                 <div className="flex items-center gap-3">
                     <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md">
@@ -39,9 +41,11 @@ const Homepage_staff = () => {
                             className="w-12 h-12 rounded-full object-cover"
                         />
                     </div>
-                    <h6 className="px-6 text-2xl font-medium text-white mb-1">
+                    <button
+                        onClick={handleLogoClick}
+                        className="px-3 text-2xl font-medium text-white mb-1">
                         BUCENG Complaint and Ticketing System
-                    </h6>
+                    </button>
                 </div>
 
                 {/* Right side buttons */}

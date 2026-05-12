@@ -12,6 +12,9 @@ const HomePage = () => {
   const handleTrackTicket = () => {
     navigate('/track-ticket');
   };
+  const handleSubmitTicket = () => {
+        navigate('/submit-ticket');
+    };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-200 via-blue-200 to-blue-300">
@@ -73,7 +76,7 @@ const HomePage = () => {
             <div className="w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center">
               <User size={28} className="text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-center text-gray-900">
+            <h2 className="px-8 text-2xl font-bold justify-center text-gray-900">
               Submit as Guest
             </h2>
           </div>
@@ -118,8 +121,11 @@ const HomePage = () => {
           </div>
 
           {/* Submit Button */}
-          <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2 text-lg">
+          <button 
+          onClick={handleSubmitTicket}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2 text-lg">
             Submit Anonymously
+            
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
               <ArrowRight size={20} className="text-orange-500" />
             </div>
