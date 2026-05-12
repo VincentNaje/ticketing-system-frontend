@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { adminAPI } from '../../services/api';
+import ticketService from '../../services/ticketService';
 import toast from 'react-hot-toast';
 import logo from '../../assets/bucenglogo.png';
 import DashboardView from './DashboardView';
@@ -10,7 +10,12 @@ import UserManagementView from './UserManagementView';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const [stats, setStats] = useState({ total: 0, needAction: 0, inProgress: 0, resolved: 0 });
+  const [stats, setStats] = useState({ 
+    total: 0, 
+    needAction: 0, 
+    inProgress: 0, 
+    resolved: 0 
+  });
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -23,14 +28,22 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsRes, ticketsRes] = await Promise.all([
-        adminAPI.getStats(),
-        adminAPI.getAllTickets(),
-      ]);
-      setStats(statsRes.data);
-      setTickets(ticketsRes.data);
+      // ─── Fetch all tickets from real backend ───
+      const response = await ticketService.getAllTickets();
+      const allTickets = response.data.tickets;
+
+      // ─── Calculate stats from real data ───
+      const total = allTickets.length;
+      const needAction = allTickets.filter(t => t.status === 'Open').length;
+      const inProgress = allTickets.filter(t => t.status === 'In Progress').length;
+      const resolved = allTickets.filter(t => t.status === 'Resolved').length;
+
+      setStats({ total, needAction, inProgress, resolved });
+      setTickets(allTickets);
+
     } catch (error) {
-      toast.error('Failed to load data');
+      toast.error('Failed to load data. Make sure backend is running!');
+      console.error('fetchDashboardData error:', error);
     } finally {
       setLoading(false);
     }
@@ -40,7 +53,6 @@ export default function AdminDashboard() {
     <div className="flex h-screen bg-gray-50">
       {/* SIDEBAR */}
       <aside className="w-64 shadow-md flex flex-col" style={{ backgroundColor: '#011787' }}>
-        {/* Logo – larger, no border-bottom */}
         <div className="pt-8 pb-6 px-4 flex justify-center">
           <img src={logo} alt="Logo" className="h-50 w-auto object-contain" />
         </div>
@@ -63,7 +75,6 @@ export default function AdminDashboard() {
             </button>
           ))}
         </nav>
-        {/* Log Out – red, with icon */}
         <div className="p-4 border-t border-blue-800">
           <button
             onClick={logout}
@@ -71,14 +82,9 @@ export default function AdminDashboard() {
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className="text-red-500"
             >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -90,7 +96,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* MAIN AREA – unchanged */}
+      {/* MAIN AREA */}
       <main className="flex-1 flex flex-col overflow-hidden">
         <div className="shrink-0 px-8 py-6" style={{ backgroundColor: '#FF6900' }}>
           <h1 className="text-2xl font-bold text-white tracking-wide">

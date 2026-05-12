@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { Routes, Route } from 'react-router-dom';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import HomePage from './pages/public/HomePage';
@@ -11,18 +10,16 @@ import TrackTicketPage from './pages/public/TrackTicketPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/staff" element={<StaffDashboard />} />
-        <Route path="/staff-home" element={<Homepage_staff />} />
-        <Route path="/submit-ticket" element={<GuestSubmission />} />
-        <Route path="/ticket-status" element={<TicketSuccessPage />} />
-        <Route path="/track-ticket" element={<TrackTicketPage />} />
-        <Route path="/" element={<HomePage />} />
-      </Routes>
-    </AuthProvider>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/staff" element={<StaffDashboard />} />
+      <Route path="/staff-home" element={<Homepage_staff />} />
+      <Route path="/submit-ticket" element={<GuestSubmission />} />
+      <Route path="/ticket-status" element={<TicketSuccessPage />} />
+      <Route path="/track-ticket" element={<TrackTicketPage />} />
+      <Route path="/" element={<HomePage />} />
+    </Routes>
   );
 }
 

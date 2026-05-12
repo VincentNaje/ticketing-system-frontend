@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
+import ticketService from '../../services/ticketService';
+import toast from 'react-hot-toast';
 
 const GuestSubmission = () => {
     const navigate = useNavigate();
@@ -42,19 +44,38 @@ const GuestSubmission = () => {
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [ticketCode, setTicketCode] = useState('');
 
-    const generateTicketCode = () => {
-        const year = new Date().getFullYear();
-        const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-        return `TKT-${year}-${random}`;
+
+    const handleConfirmSubmit = async () => {
+    setShowConfirmDialog(false);
+
+    // ─── Map category name to category_id ───
+    const categoryMap = {
+        'Academic Concerns': 1,
+        'Faculty / Instructor': 2,
+        'Enrollment / Scheduling': 3,
+        'Facilities & Cleanliness': 4,
+        'Administrative Process': 5,
+        'Financial / Scholarship': 6,
+        'Others / General': 7,
     };
 
-    const handleConfirmSubmit = () => {
-        const code = generateTicketCode();
+    try {
+        const response = await ticketService.submitTicket({
+        category_id: categoryMap[formData.category] || 7,
+        subject: formData.subject,
+        description: formData.description,
+        submitter_email: formData.email || ''
+        });
+
+        // ─── Use real ticket code from backend ───
+        const code = response.data.ticket_code;
         setTicketCode(code);
-        setShowConfirmDialog(false);
         setShowSuccessDialog(true);
 
-        console.log('Ticket submitted:', { ...formData, ticketCode: code });
+    } catch (error) {
+        toast.error('Failed to submit ticket. Please try again.');
+        console.error('Submit error:', error);
+    }
     };
 
     const handleCloseSuccess = () => {

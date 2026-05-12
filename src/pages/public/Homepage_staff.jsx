@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const Homepage_staff = () => {
     const [email, setEmail] = useState('');
@@ -8,10 +10,31 @@ const Homepage_staff = () => {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const { login } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Add your login logic here
-        console.log('Login attempted with:', { email, password });
+        setError('');
+        setLoading(true);
+
+        const result = await login(email, password);
+
+        if (result.success) {
+            toast.success('Welcome back!');
+            // ─── Redirect based on role ───
+            if (result.role === 'admin' || result.role === 'superadmin') {
+            navigate('/admin');
+            } else {
+            navigate('/staff');
+            }
+        } else {
+            setError(result.message || 'Invalid email or password.');
+            toast.error(result.message || 'Invalid email or password.');
+        }
+
+        setLoading(false);
     };
 
     const handleTrackTicket = () => {
@@ -128,13 +151,22 @@ const Homepage_staff = () => {
                             </div>
                         </div>
 
-                        {/* Login Button */}
-                        <button
-                            type="submit"
-                            className="w-full mt-6 py-3 border-2 border-blue-500 text-blue-500 rounded-md hover:bg-blue-500 hover:text-white transition-colors font-semibold text-base"
-                        >
-                            Login
-                        </button>
+                    {/* Login Button */}
+                    {/* Error Message */}
+                    {error && (
+                    <div className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded border border-red-200">
+                        {error}
+                    </div>
+                    )}
+
+                    {/* Login Button */}
+                    <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full mt-6 py-3 border-2 border-blue-500 text-blue-500 rounded-md hover:bg-blue-500 hover:text-white transition-colors font-semibold text-base disabled:opacity-50"
+                    >
+                    {loading ? 'Logging in...' : 'Login'}
+                    </button>
                     </form>
 
                     {/* Footer Link */}

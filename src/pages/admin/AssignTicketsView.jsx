@@ -1,13 +1,19 @@
-// src/pages/admin/AssignTicketsView.jsx
 import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 // ── Ticket Details Modal (solid header background) ───────────────────────
 function TicketDetailsModal({ ticket, onClose }) {
   if (!ticket) return null;
   const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true
     });
   };
   const formatDate = (dateString) => {
@@ -92,7 +98,7 @@ function TicketDetailsModal({ ticket, onClose }) {
 }
 
 // ── Custom Select Dropdown (same as used in filters) ─────────────────────
-function CustomSelect({ options, value, onChange, placeholder, minWidth }) {
+function CustomSelect({ options, value, onChange, placeholder, minWidth, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef(null);
   React.useEffect(() => {
@@ -103,11 +109,24 @@ function CustomSelect({ options, value, onChange, placeholder, minWidth }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const selectedLabel = options.find(opt => opt.value === value)?.label || '';
+
+  const handleToggle = () => {
+    if (!disabled) setIsOpen(!isOpen);
+  };
+
   return (
     <div className={`relative ${minWidth}`} ref={dropdownRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white hover:bg-gray-50 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-200">
+      <button 
+        onClick={handleToggle} 
+        disabled={disabled}
+        className={`w-full flex items-center justify-between gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white transition focus:outline-none focus:ring-2 focus:ring-blue-200 ${disabled ? 'opacity-70 cursor-not-allowed bg-gray-50' : 'hover:bg-gray-50 cursor-pointer'}`}
+      >
         <span className="truncate">{selectedLabel || placeholder}</span>
-        <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        {!disabled && (
+          <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
       </button>
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-60 overflow-y-auto">
@@ -198,7 +217,10 @@ function UpdateTicketModal({ ticket, staffList, onUpdate, onClose }) {
     { label: 'Normal', value: 'normal' }
   ];
 
+  const isReadOnly = ticket.status === 'resolved' || ticket.status === 'closed';
+
   const handleUpdateClick = () => {
+    if (isReadOnly) return;
     setPendingAction('update');
     setShowConfirm(true);
   };
@@ -253,7 +275,9 @@ function UpdateTicketModal({ ticket, staffList, onUpdate, onClose }) {
               </svg>
             </button>
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 text-center">Update Ticket</h2>
+              <h2 className="text-lg font-semibold text-gray-800 text-center">
+                {isReadOnly ? 'Ticket Details (Resolved)' : 'Update Ticket'}
+              </h2>
               <p className="text-sm font-bold text-[#095BBC] mt-1 text-left">{ticket.code}</p>
             </div>
           </div>
@@ -262,17 +286,17 @@ function UpdateTicketModal({ ticket, staffList, onUpdate, onClose }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Assign to</label>
-                <CustomSelect options={staffOptions} value={assignTo} onChange={setAssignTo} placeholder="Select staff" minWidth="w-full" />
+                <CustomSelect options={staffOptions} value={assignTo} onChange={setAssignTo} placeholder="Select staff" minWidth="w-full" disabled={isReadOnly} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Status</label>
-                <CustomSelect options={statusOptions} value={status} onChange={setStatus} placeholder="Select status" minWidth="w-full" />
+                <CustomSelect options={statusOptions} value={status} onChange={setStatus} placeholder="Select status" minWidth="w-full" disabled={isReadOnly} />
               </div>
             </div>
 
             <div className="mb-4">
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Priority</label>
-              <CustomSelect options={priorityOptions} value={priority} onChange={setPriority} placeholder="Select priority" minWidth="w-full" />
+              <CustomSelect options={priorityOptions} value={priority} onChange={setPriority} placeholder="Select priority" minWidth="w-full" disabled={isReadOnly} />
             </div>
 
             <div className="mb-4">
@@ -281,8 +305,9 @@ function UpdateTicketModal({ ticket, staffList, onUpdate, onClose }) {
                 rows={2}
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-none"
-                placeholder="Describe how it was resolved"
+                disabled={isReadOnly}
+                className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-none ${isReadOnly ? 'bg-gray-50 opacity-70 cursor-not-allowed' : ''}`}
+                placeholder={isReadOnly ? 'No notes' : 'Describe how it was resolved'}
               />
             </div>
 
@@ -314,14 +339,23 @@ function UpdateTicketModal({ ticket, staffList, onUpdate, onClose }) {
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/30 flex justify-end gap-3">
-            <button onClick={handleUpdateClick} className="px-5 py-2 bg-[#095BBC] hover:bg-[#07459e] text-white text-sm font-medium rounded-lg transition shadow-sm">
-              Update
-            </button>
-            <button onClick={handleMarkResolvedClick} className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition shadow-sm">
-              Mark resolved
-            </button>
-          </div>
+          {!isReadOnly && (
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/30 flex justify-end gap-3">
+              <button onClick={handleUpdateClick} className="px-5 py-2 bg-[#095BBC] hover:bg-[#07459e] text-white text-sm font-medium rounded-lg transition shadow-sm">
+                Update
+              </button>
+              <button onClick={handleMarkResolvedClick} className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition shadow-sm">
+                Mark resolved
+              </button>
+            </div>
+          )}
+          {isReadOnly && (
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/30 flex justify-end">
+              <button onClick={onClose} className="px-5 py-2 bg-[#095BBC] hover:bg-[#07459e] text-white text-sm font-medium rounded-lg transition shadow-sm">
+                Close
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -346,35 +380,12 @@ function UpdateTicketModal({ ticket, staffList, onUpdate, onClose }) {
   );
 }
 
-// ── Mock Data (unchanged) ────────────────────────────────────────────────
-const CATEGORIES = [
-  'Academic Records',
-  'Faculty / Instructor',
-  'Enrollment / Scheduling',
-  'Facilities & Cleanliness',
-  'Administrative Process',
-  'Financial / Scholarship',
-  'Others / General'
-];
 
-const MOCK_TICKETS = [
-  { id: 1, code: 'TKT-2026-001', subject: 'Unclean restroom, 2nd floor', category: 'Facilities & Cleanliness', status: 'open', priority: 'normal', assignedTo: '', created_at: new Date().toISOString(), description: 'Restroom very dirty.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, updated_at: new Date().toISOString(), submittedBy: 'Anonymous' },
-  { id: 2, code: 'TKT-2026-002', subject: 'Broken AC, HR office', category: 'Facilities & Cleanliness', status: 'in_progress', priority: 'high', assignedTo: '', created_at: new Date().toISOString(), description: 'AC not cooling.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, updated_at: new Date().toISOString(), submittedBy: 'Jane' },
-  { id: 3, code: 'TKT-2026-003', subject: 'Grade correction request', category: 'Academic Records', status: 'open', priority: 'urgent', assignedTo: '', created_at: new Date().toISOString(), description: 'Wrong grade posted.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, updated_at: new Date().toISOString(), submittedBy: 'Student' },
-  { id: 4, code: 'TKT-2026-004', subject: 'Scholarship application delay', category: 'Financial / Scholarship', status: 'open', priority: 'normal', assignedTo: '', created_at: new Date().toISOString(), description: 'Waiting for approval.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, updated_at: new Date().toISOString(), submittedBy: 'Scholarship applicant' },
-  { id: 5, code: 'TKT-2026-005', subject: 'Class scheduling conflict', category: 'Enrollment / Scheduling', status: 'in_progress', priority: 'high', assignedTo: '', created_at: new Date().toISOString(), description: 'Two classes overlap.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, updated_at: new Date().toISOString(), submittedBy: 'Student' },
-];
-
-const MOCK_STAFF = [
-  { id: 1, name: 'Ms. Sarah Santos' },
-  { id: 2, name: 'Mr. Mark Cruz' },
-  { id: 3, name: 'Ms. Ana Reyes' },
-];
-
-// ── Main Component ───────────────────────────────────────────────────────
 export default function AssignTicketsView() {
-  const [tickets, setTickets] = useState(MOCK_TICKETS);
-  const [staffList] = useState(MOCK_STAFF);
+  const [tickets, setTickets] = useState([]);
+  const [staffList, setStaffList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
@@ -383,6 +394,121 @@ export default function AssignTicketsView() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // 1. Fetch tickets and staff from the backend
+  useEffect(() => {
+    fetchTicketsAndStaff();
+  }, []);
+
+  const fetchTicketsAndStaff = async () => {
+    try {
+      setLoading(true);
+
+      // Run both API calls at the same time using the shared api instance (token auto-attached)
+      const [ticketsRes, staffRes] = await Promise.all([
+        api.get('/api/admin/tickets'),
+        api.get('/api/admin/staff')
+      ]);
+
+      // Backend returns { success, tickets: [...] }
+      const safeTickets = Array.isArray(ticketsRes.data.tickets) ? ticketsRes.data.tickets : [];
+      const mappedTickets = safeTickets.map(t => {
+        if (!t) return null;
+        return {
+          id: t.id,
+          code: t.ticket_code || 'N/A',
+          subject: t.subject || 'No Subject provided',
+          category: t.categories?.name || 'General',
+          status: typeof t.status === 'string'
+            ? (t.status === 'In Progress' ? 'in_progress' : t.status === 'Resolved' ? 'resolved' : t.status === 'Closed' ? 'closed' : 'open')
+            : 'open',
+          priority: typeof t.priority === 'string' ? t.priority.toLowerCase() : 'normal',
+          assignedTo: t.assigned_to || '',
+          submittedBy: t.submitter_email || 'Anonymous (guest)',
+          created_at: t.created_at || new Date().toISOString(),
+          updated_at: t.updated_at || t.created_at || new Date().toISOString(),
+          description: t.description || 'No description provided.',
+          resolutionNotes: t.resolution_notes || '',
+          resolutionDate: t.status === 'Resolved' ? t.updated_at : null,
+          resolvedBy: t.status === 'Resolved' ? t.assigned_to : null,
+          history: t.history || []
+        };
+      }).filter(Boolean);
+
+      setTickets(mappedTickets);
+
+      // Backend returns { success, staff: [...] } with full_name field
+      const safeStaff = Array.isArray(staffRes.data.staff) ? staffRes.data.staff : [];
+      setStaffList(safeStaff.map(s => ({
+        id: s.id,
+        name: s.full_name
+      })));
+
+    } catch (error) {
+      console.error('Error fetching assignment data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Send the update to your Express backend
+  const handleUpdateTicket = async (ticketId, updatedData) => {
+    try {
+      // Convert internal status keys back to DB format
+      const payload = {
+        assigned_to: updatedData.assignTo || null,
+        status: updatedData.status === 'in_progress' ? 'In Progress'
+              : updatedData.status === 'resolved' ? 'Resolved'
+              : 'Open',
+        priority: updatedData.priority,
+        resolution_notes: updatedData.resolutionNotes || null
+      };
+
+      await api.put(`/api/admin/tickets/${ticketId}`, payload);
+
+      // Refresh data to pull new history logs
+      await fetchTicketsAndStaff();
+
+      setShowUpdateModal(false);
+      setSelectedTicket(null);
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      const msg = error.response?.data?.message || 'Failed to update ticket. Please try again.';
+      alert(msg);
+    }
+  };
+
+  const categoryOptions = ['all', 'Academic Records', 'Faculty / Instructor', 'Enrollment / Scheduling', 'Facilities & Cleanliness', 'Administrative Process', 'Financial / Scholarship', 'Others / General'];
+  const statusOptions = ['all', 'open', 'in_progress', 'resolved'];
+  const priorityOptions = ['all', 'urgent', 'high', 'normal'];
+
+  const filteredTickets = tickets.filter(ticket => {
+    if (filterCategory !== 'all' && ticket.category !== filterCategory) return false;
+    if (filterStatus !== 'all' && ticket.status !== filterStatus) return false;
+    if (filterPriority !== 'all' && ticket.priority !== filterPriority) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage);
+
+  // Hook must stay above the early loading return
+  useEffect(() => setCurrentPage(1), [filterCategory, filterStatus, filterPriority]);
+
+  const goToPage = (page) => setCurrentPage(Math.max(1, Math.min(totalPages, page)));
+
+  const openUpdateModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setShowUpdateModal(true);
+  };
+
+  const openDetailsModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setShowDetailsModal(true);
+  };
+
+  const hasActiveFilter = filterCategory !== 'all' || filterStatus !== 'all' || filterPriority !== 'all';
 
   const getStatusBadge = (status) => {
     const colors = {
@@ -404,65 +530,17 @@ export default function AssignTicketsView() {
     return { text: ticket.priority, color: colors[ticket.priority] || colors.normal };
   };
 
-  const categoryOptions = ['all', ...CATEGORIES];
-  const statusOptions = ['all', 'open', 'in_progress', 'resolved'];
-  const priorityOptions = ['all', 'urgent', 'high', 'normal'];
-
-  const filteredTickets = tickets.filter(ticket => {
-    if (filterCategory !== 'all' && ticket.category !== filterCategory) return false;
-    if (filterStatus !== 'all' && ticket.status !== filterStatus) return false;
-    if (filterPriority !== 'all' && ticket.priority !== filterPriority) return false;
-    return true;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage);
-
-  useEffect(() => setCurrentPage(1), [filterCategory, filterStatus, filterPriority]);
-
-  const goToPage = (page) => setCurrentPage(Math.max(1, Math.min(totalPages, page)));
-
-  const handleUpdateTicket = (ticketId, updatedData) => {
-    setTickets(prev => prev.map(t => {
-      if (t.id !== ticketId) return t;
-      const now = new Date().toISOString();
-      const historyEntry = {
-        action: 'Ticket updated',
-        details: `Status: ${t.status} → ${updatedData.status}, Priority: ${t.priority} → ${updatedData.priority}, Assigned to: ${updatedData.assignTo || 'Unassigned'}`,
-        date: now,
-        performedBy: 'Admin'
-      };
-      const newHistory = [...(t.history || []), historyEntry];
-      return {
-        ...t,
-        ...updatedData,
-        assignedTo: updatedData.assignTo,
-        status: updatedData.status,
-        priority: updatedData.priority,
-        resolutionNotes: updatedData.resolutionNotes,
-        resolvedBy: updatedData.resolvedBy || t.resolvedBy,
-        resolutionDate: updatedData.resolutionDate || t.resolutionDate,
-        updated_at: now,
-        history: newHistory,
-      };
-    }));
-    setShowUpdateModal(false);
-    setSelectedTicket(null);
-    // No alert – success modal handled inside UpdateTicketModal
-  };
-
-  const openUpdateModal = (ticket) => {
-    setSelectedTicket(ticket);
-    setShowUpdateModal(true);
-  };
-
-  const openDetailsModal = (ticket) => {
-    setSelectedTicket(ticket);
-    setShowDetailsModal(true);
-  };
-
-  const hasActiveFilter = filterCategory !== 'all' || filterStatus !== 'all' || filterPriority !== 'all';
+  // Safe loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-500 text-sm">Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

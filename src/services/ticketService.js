@@ -12,6 +12,9 @@ const ticketService = {
   getAllTickets: () =>
     api.get('/api/tickets/all'),
 
+  getMyLogs: () =>
+    api.get('/api/tickets/my-logs'),
+
   getTicketLogs: (ticket_id) =>
     api.get(`/api/tickets/${ticket_id}/logs`),
 

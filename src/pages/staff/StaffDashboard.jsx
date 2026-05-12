@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/bucenglogo.png';
+import ticketService from '../../services/ticketService';
+import api from '../../services/api';
 
 // ── Custom Select (used in modal status dropdown and history filters) ───
 function CustomSelect({ options, value, onChange, placeholder, minWidth }) {
@@ -58,14 +60,46 @@ function SuccessModal({ isOpen, onClose, message }) {
 function StaffTicketDetailsModal({ ticket, onClose, onUpdate }) {
   const [status, setStatus] = useState(ticket.status);
   const [resolutionNotes, setResolutionNotes] = useState(ticket.resolutionNotes || '');
+  const [history, setHistory] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [validationError, setValidationError] = useState('');
 
+  useEffect(() => {
+    if (ticket.id) {
+      fetchLogs();
+    }
+  }, [ticket.id]);
+
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const res = await ticketService.getTicketLogs(ticket.id);
+      const mappedLogs = res.data.logs.map(log => ({
+        action: log.action,
+        details: log.remarks,
+        date: log.created_at,
+        performedBy: log.performed_by
+      }));
+      setHistory(mappedLogs);
+    } catch (err) {
+      console.error('Error fetching logs:', err);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true
     });
   };
 
@@ -106,10 +140,14 @@ function StaffTicketDetailsModal({ ticket, onClose, onUpdate }) {
     setShowConfirm(true);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setShowConfirm(false);
-    onUpdate(ticket.id, { status, resolutionNotes });
-    setShowSuccess(true);
+    try {
+      await onUpdate(ticket.id, { status, resolutionNotes });
+      setShowSuccess(true);
+    } catch (err) {
+      alert('Failed to update ticket');
+    }
   };
 
   const handleSuccessClose = () => {
@@ -183,11 +221,13 @@ function StaffTicketDetailsModal({ ticket, onClose, onUpdate }) {
               </form>
             </div>
             {/* Activity Timeline */}
-            {ticket.history && ticket.history.length > 0 && (
-              <div>
-                <h3 className="text-md font-bold text-gray-800 mb-3">Activity Timeline</h3>
+            <div>
+              <h3 className="text-md font-bold text-gray-800 mb-3">Activity Timeline</h3>
+              {loadingLogs ? (
+                <p className="text-xs text-gray-400 italic">Loading timeline...</p>
+              ) : history && history.length > 0 ? (
                 <div className="space-y-3">
-                  {ticket.history.map((entry, idx) => (
+                  {history.map((entry, idx) => (
                     <div key={idx} className="flex gap-3">
                       <div className="w-2 h-2 mt-2 rounded-full bg-blue-400 shrink-0"></div>
                       <div className="flex-1">
@@ -198,8 +238,10 @@ function StaffTicketDetailsModal({ ticket, onClose, onUpdate }) {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs text-gray-400 italic">No activity recorded yet.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -224,18 +266,7 @@ function StaffTicketDetailsModal({ ticket, onClose, onUpdate }) {
   );
 }
 
-// ── Initial mock data (moved into StaffDashboard state) ──────────────────
-const INITIAL_MOCK_TICKETS = [
-  { id: 1, code: 'TKT-2026-ZBYPIG', subject: 'Unclean restroom on 2nd floor', category: 'Facilities & Cleanliness', status: 'in_progress', priority: 'urgent', assignedTo: 'Ms. Sarah Santos', created_at: '2026-04-30T01:00:00Z', updated_at: '2026-05-02T02:00:00Z', description: 'The 2nd floor restroom super dirty like kadiri.', history: [
-    { action: 'Ticket Submitted', details: '', date: '2026-04-30T00:00:00Z', performedBy: 'system' },
-    { action: 'Assigned to Ms. Sarah Santos', details: '', date: '2026-04-30T02:15:00Z', performedBy: 'Admin' },
-    { action: 'Status → In progress', details: '', date: '2026-04-30T02:20:00Z', performedBy: 'Ms. Santos' },
-  ], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Anonymous (guest)' },
-  { id: 2, code: 'TKT-2026-002', subject: 'Broken AC, HR office', category: 'Facilities & Cleanliness', status: 'open', priority: 'normal', assignedTo: 'Ms. Santos', created_at: '2026-05-03T03:00:00Z', updated_at: '2026-05-04T05:30:00Z', description: 'AC not cooling.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Jane' },
-  { id: 3, code: 'TKT-2026-003', subject: 'Grade correction request', category: 'Academic Records', status: 'in_progress', priority: 'urgent', assignedTo: 'Ms. Santos', created_at: '2026-04-28T08:00:00Z', updated_at: '2026-05-06T10:00:00Z', description: 'Wrong grade posted.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Student' },
-  { id: 4, code: 'TKT-2026-004', subject: 'Scholarship application delay', category: 'Financial / Scholarship', status: 'resolved', priority: 'normal', assignedTo: 'Ms. Santos', created_at: '2026-05-07T09:00:00Z', updated_at: '2026-05-08T11:00:00Z', description: 'Waiting for approval.', history: [], resolutionNotes: 'Approved', resolutionDate: '2026-05-08', resolvedBy: 'Admin', submittedBy: 'Scholarship applicant' },
-  { id: 5, code: 'TKT-2026-005', subject: 'Class scheduling conflict', category: 'Enrollment / Scheduling', status: 'open', priority: 'normal', assignedTo: 'Ms. Santos', created_at: '2026-04-29T10:00:00Z', updated_at: '2026-04-29T12:00:00Z', description: 'Two classes overlap.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Student' },
-];
+
 
 // ── Main Dashboard Tab (receives tickets, stats, and onUpdate) ─────────
 function MyDashboard({ tickets, stats, onUpdate }) {
@@ -386,48 +417,50 @@ function MyDashboard({ tickets, stats, onUpdate }) {
   );
 }
 
-// ── Enhanced History Log Component (with Action + Date filters) ─────────
+// ── History Log Component (real data) ────────────────────────────────────
 function HistoryLog() {
-  const [history, setHistory] = useState([
-    { id: 1, action: 'Ticket assigned to you', details: 'TKT-2026-001 – Unclean restroom', date: '2026-05-01T10:00:00Z', performedBy: 'Admin' },
-    { id: 2, action: 'Status updated', details: 'TKT-2026-001 changed from Open to In Progress', date: '2026-05-02T14:30:00Z', performedBy: 'Admin' },
-    { id: 3, action: 'Resolution added', details: 'TKT-2026-004 – Scholarship delay resolved', date: '2026-05-08T09:15:00Z', performedBy: 'Admin' },
-    { id: 4, action: 'New ticket assigned', details: 'TKT-2026-005 – Class scheduling conflict', date: '2026-05-09T08:00:00Z', performedBy: 'Admin' },
-    { id: 5, action: 'Ticket resolved', details: 'TKT-2026-004 marked as resolved', date: '2026-05-08T10:00:00Z', performedBy: 'System' },
-    { id: 6, action: 'Priority changed', details: 'TKT-2026-006 set to High', date: '2026-05-02T09:00:00Z', performedBy: 'Admin' },
-  ]);
-  const [filterAction, setFilterAction] = useState('all');
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  useEffect(() => {
+    ticketService.getMyLogs()
+      .then(res => setHistory(res.data.logs || []))
+      .catch(err => console.error('fetchLogs error:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true
     });
   };
 
   const isWithinDateRange = (dateString, range) => {
     const date = new Date(dateString);
     const now = new Date();
-    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const today = startOfDay(now);
-    const aWeekAgo = new Date(today);
-    aWeekAgo.setDate(today.getDate() - 7);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const aWeekAgo = new Date(today); aWeekAgo.setDate(today.getDate() - 7);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
     switch (range) {
-      case 'last7days': return date >= aWeekAgo && date <= today;
-      case 'thisMonth': return date >= startOfMonth && date <= today;
+      case 'last7days': return date >= aWeekAgo && date <= now;
+      case 'thisMonth': return date >= startOfMonth && date <= now;
       case 'lastMonth': return date >= startOfLastMonth && date <= endOfLastMonth;
       default: return true;
     }
   };
 
-  const actionTypes = ['all', ...new Set(history.map(h => h.action))];
-  const actionOptions = actionTypes.map(act => ({ label: act === 'all' ? 'All Actions' : act, value: act }));
   const dateOptions = [
     { label: 'All Dates', value: 'all' },
     { label: 'Last 7 Days', value: 'last7days' },
@@ -435,54 +468,49 @@ function HistoryLog() {
     { label: 'Last Month', value: 'lastMonth' },
   ];
 
-  const filteredHistory = history.filter(item => {
-    if (filterAction !== 'all' && item.action !== filterAction) return false;
-    if (filterDate !== 'all' && !isWithinDateRange(item.date, filterDate)) return false;
-    return true;
-  });
-  const hasActiveFilter = filterAction !== 'all' || filterDate !== 'all';
-  const clearFilters = () => { setFilterAction('all'); setFilterDate('all'); };
-
+  const filteredHistory = history.filter(item =>
+    filterDate === 'all' || isWithinDateRange(item.date, filterDate)
+  );
   const totalPages = Math.max(1, Math.ceil(filteredHistory.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedHistory = filteredHistory.slice(startIndex, startIndex + itemsPerPage);
-  useEffect(() => setCurrentPage(1), [filterAction, filterDate]);
+  useEffect(() => setCurrentPage(1), [filterDate]);
   const goToPage = (page) => setCurrentPage(Math.max(1, Math.min(totalPages, page)));
 
   return (
     <div className="space-y-8">
-      <div><h1 className="text-2xl font-bold text-gray-800">History Log</h1><p className="text-sm text-gray-500 mt-1">Track all your activities and ticket updates</p></div>
+      <div><h1 className="text-2xl font-bold text-gray-800">History Log</h1><p className="text-sm text-gray-500 mt-1">All activities on your assigned tickets</p></div>
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-1 text-gray-600">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
           <span className="text-sm font-medium">Filter:</span>
         </div>
-        <CustomSelect options={actionOptions} value={filterAction} onChange={setFilterAction} placeholder="Action" minWidth="min-w-[160px]" />
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-medium text-gray-600">Date:</span>
-          <CustomSelect options={dateOptions} value={filterDate} onChange={setFilterDate} placeholder="Date" minWidth="min-w-[150px]" />
-        </div>
-        {hasActiveFilter && <button onClick={clearFilters} className="text-xs text-blue-600 hover:underline">Clear filters</button>}
+        <CustomSelect options={dateOptions} value={filterDate} onChange={setFilterDate} placeholder="Date" minWidth="min-w-[150px]" />
+        {filterDate !== 'all' && <button onClick={() => setFilterDate('all')} className="text-xs text-blue-600 hover:underline">Clear</button>}
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50/95">
               <tr>
-                <th className="w-1/4 px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
-                <th className="w-2/5 px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Details</th>
-                <th className="w-1/5 px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
-                <th className="w-1/6 px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Performed By</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Details</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date &amp; Time</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">By</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {paginatedHistory.length === 0 ? (
-                <tr><td colSpan="4" className="text-center py-12 text-gray-400 text-sm">No history entries found</td></tr>
+              {loading ? (
+                <tr><td colSpan="5" className="text-center py-12 text-gray-400 text-sm">Loading...</td></tr>
+              ) : paginatedHistory.length === 0 ? (
+                <tr><td colSpan="5" className="text-center py-12 text-gray-400 text-sm">No history entries found</td></tr>
               ) : (
                 paginatedHistory.map((item) => (
                   <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-gray-800">{item.action}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words">{item.details}</td>
+                    <td className="px-6 py-4 text-xs font-mono text-blue-700">{item.ticketCode}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[200px]">{item.details || item.subject || '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{formatDateTime(item.date)}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{item.performedBy}</td>
                   </tr>
@@ -509,32 +537,80 @@ function HistoryLog() {
   );
 }
 
+
 // ── Main StaffDashboard (sidebar, top bar, state) ────────────────────────
 export default function StaffDashboard() {
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [tickets, setTickets] = useState(INITIAL_MOCK_TICKETS);
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleUpdateTicket = (ticketId, updatedData) => {
-    setTickets(prev =>
-      prev.map(ticket => {
-        if (ticket.id !== ticketId) return ticket;
-        const now = new Date().toISOString();
-        const historyEntry = {
-          action: 'Ticket updated by you',
-          details: `Status changed to ${updatedData.status}. Resolution notes added.`,
-          date: now,
-          performedBy: 'You'
-        };
-        return {
-          ...ticket,
-          status: updatedData.status,
-          resolutionNotes: updatedData.resolutionNotes,
-          updated_at: now,
-          history: [...(ticket.history || []), historyEntry]
-        };
-      })
-    );
+  // ─── Fetch tickets assigned to logged in staff ───
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const response = await ticketService.getAllTickets();
+      const allTickets = response.data.tickets;
+
+      // ─── Map backend fields to match what the UI expects ───
+      const mapped = allTickets.map(t => ({
+        id: t.id,
+        code: t.ticket_code,
+        subject: t.subject,
+        category: t.categories?.name || 'General',
+        status: t.status === 'In Progress' ? 'in_progress'
+              : t.status === 'Resolved' ? 'resolved'
+              : 'open',
+        priority: t.priority?.toLowerCase() || 'normal',
+        assignedTo: t.assigned_to || 'Unassigned',
+        created_at: t.created_at,
+        updated_at: t.updated_at,
+        description: t.description,
+        resolutionNotes: t.resolution_notes || '',
+        submittedBy: 'Anonymous (guest)',
+        history: []
+      }));
+
+      setTickets(mapped);
+    } catch (error) {
+      console.error('fetchTickets error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const handleUpdateTicket = async (ticketId, updatedData) => {
+    try {
+      const statusLabel = updatedData.status === 'in_progress' ? 'In Progress'
+                        : updatedData.status === 'resolved' ? 'Resolved'
+                        : 'Open';
+
+      // If status is resolved, we must use the resolve endpoint to save resolution_notes
+      if (updatedData.status === 'resolved') {
+        await ticketService.resolveTicket(ticketId, {
+          resolution_notes: updatedData.resolutionNotes,
+          performed_by: 'staff'
+        });
+      } else {
+        // Otherwise use the regular status update endpoint
+        await ticketService.updateStatus(ticketId, {
+          status: statusLabel,
+          remarks: updatedData.resolutionNotes,
+          performed_by: 'staff'
+        });
+      }
+
+      // Refresh tickets list
+      await fetchTickets();
+
+    } catch (error) {
+      console.error('handleUpdateTicket error:', error);
+      throw error; // Re-throw so modal can show error if needed
+    }
   };
 
   const stats = {
@@ -547,7 +623,9 @@ export default function StaffDashboard() {
   return (
     <div className="flex h-screen bg-gray-50">
       <aside className="w-64 shadow-md flex flex-col" style={{ backgroundColor: '#011787' }}>
-        <div className="pt-8 pb-6 px-4 flex justify-center"><img src={logo} alt="Logo" className="h-16 w-auto object-contain" /></div>
+        <div className="pt-8 pb-6 px-4 flex justify-center">
+          <img src={logo} alt="Logo" className="h-16 w-auto object-contain" />
+        </div>
         <nav className="flex-1 px-5 py-10 space-y-4">
           <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-2.5 rounded-md transition-colors text-white ${activeTab === 'dashboard' ? 'font-medium' : 'hover:bg-blue-800'}`} style={activeTab === 'dashboard' ? { backgroundColor: '#095BBC' } : {}}>My Dashboard</button>
           <button onClick={() => setActiveTab('history')} className={`w-full text-left px-4 py-2.5 rounded-md transition-colors text-white ${activeTab === 'history' ? 'font-medium' : 'hover:bg-blue-800'}`} style={activeTab === 'history' ? { backgroundColor: '#095BBC' } : {}}>History Log</button>
@@ -566,11 +644,7 @@ export default function StaffDashboard() {
         </div>
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'dashboard' && (
-            <MyDashboard
-              tickets={tickets}
-              stats={stats}
-              onUpdate={handleUpdateTicket}
-            />
+            <MyDashboard tickets={tickets} stats={stats} onUpdate={handleUpdateTicket} />
           )}
           {activeTab === 'history' && <HistoryLog />}
         </div>

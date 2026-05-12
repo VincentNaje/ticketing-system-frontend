@@ -1,13 +1,20 @@
 // src/pages/admin/ReportsView.jsx
 import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
-// ── Ticket Details Modal (same as DashboardView) ─────────────────────────
+// ── Ticket Details Modal ──────────────────────────────────────────────────
 function TicketDetailsModal({ ticket, onClose }) {
   if (!ticket) return null;
   const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true
     });
   };
   const formatDate = (dateString) => {
@@ -19,79 +26,137 @@ function TicketDetailsModal({ ticket, onClose }) {
       open: 'bg-[#E6F1FB] text-[#0D457D]',
       in_progress: 'bg-[#FAEEDA] text-[#653A08]',
       resolved: 'bg-[#EAF3DE] text-[#2A530D]',
+      closed: 'bg-gray-100 text-gray-600',
     };
     return colors[status] || colors.open;
   };
   const getPriorityDisplay = () => {
-    if (ticket.status === 'open') return { text: 'normal', color: 'bg-[#EAF3DE] text-[#2A530D]' };
+    if (ticket.status === 'open') return { text: 'Normal', color: 'bg-[#EAF3DE] text-[#2A530D]' };
     if (ticket.status === 'resolved') return { text: 'Done', color: 'bg-[#EAF3DE] text-[#2A530D]' };
-    const colors = { urgent: 'bg-red-100 text-red-800', high: 'bg-orange-100 text-orange-800', normal: 'bg-[#EAF3DE] text-[#2A530D]' };
-    return { text: ticket.priority, color: colors[ticket.priority] || colors.normal };
+    const colors = { urgent: 'bg-red-100 text-red-700', high: 'bg-orange-100 text-orange-700', normal: 'bg-[#EAF3DE] text-[#2A530D]' };
+    return { text: ticket.priority, color: colors[ticket.priority?.toLowerCase()] || colors.normal };
   };
   const priorityDisplay = getPriorityDisplay();
+  const dotColors = ['bg-green-500', 'bg-blue-800', 'bg-gray-400', 'bg-purple-500', 'bg-yellow-500'];
+
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white px-6 py-5 border-b border-slate-100 rounded-t-2xl flex justify-between items-center">
-          <h2 className="text-xl font-bold text-slate-800">Ticket Details</h2>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
+    <div onClick={onClose} className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-800">Ticket Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none transition-colors">✕</button>
         </div>
-        <div className="px-6 py-6 space-y-6">
-          <div>
-            <h3 className="text-sm font-bold text-gray-700 mb-3">Basic Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
-              <div><div className="text-xs font-medium text-gray-400">Ticket Code</div><div className="text-sm font-semibold text-gray-800">{ticket.code}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Concern / Subject</div><div className="text-sm text-gray-700">{ticket.subject}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Category</div><div className="text-sm text-gray-700">{ticket.category}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Priority</div><span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityDisplay.color}`}>{priorityDisplay.text}</span></div>
-              <div><div className="text-xs font-medium text-gray-400">Status</div><span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeModal(ticket.status)}`}>{ticket.status === 'in_progress' ? 'In Progress' : ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}</span></div>
-              <div><div className="text-xs font-medium text-gray-400">Assigned to</div><div className="text-sm text-gray-700">{ticket.assignedTo || 'Unassigned'}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Submitted by</div><div className="text-sm text-gray-700">{ticket.submittedBy || 'Anonymous'}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Date Submitted</div><div className="text-sm text-gray-700">{formatDateTime(ticket.created_at)}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Last Updated</div><div className="text-sm text-gray-700">{formatDateTime(ticket.updated_at || ticket.created_at)}</div></div>
-            </div>
-          </div>
-          {ticket.history && ticket.history.length > 0 && (
-            <div>
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Update History</h3>
-              <div className="space-y-3">
-                {ticket.history.map((entry, idx) => (
-                  <div key={idx} className="flex gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-blue-400 shrink-0"></div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-800">{entry.action}</div>
-                      {entry.details && <div className="text-xs text-gray-500">{entry.details}</div>}
-                      <div className="text-xs text-gray-400 mt-0.5">{formatDateTime(entry.date)} by {entry.performedBy}</div>
-                    </div>
+
+        {/* Two-column body */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+
+          {/* LEFT: Basic Info + Update History */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <h3 className="text-sm font-bold text-gray-700 mb-3">Basic Information</h3>
+              <div className="space-y-2">
+                {[
+                  { label: 'Ticket Code', value: <span className="font-semibold text-gray-800">{ticket.code}</span> },
+                  { label: 'Concern/ Subject', value: ticket.subject },
+                  { label: 'Category', value: ticket.category },
+                  { label: 'Priority', value: <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${priorityDisplay.color}`}>{priorityDisplay.text}</span> },
+                  { label: 'Status', value: <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeModal(ticket.status)}`}>{ticket.status === 'in_progress' ? 'In Progress' : ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}</span> },
+                  { label: 'Assigned to', value: ticket.assignedTo || 'Unassigned' },
+                  { label: 'Submitted by', value: ticket.submittedBy || 'Anonymous (guest)' },
+                  { label: 'Date Submitted', value: formatDateTime(ticket.created_at) },
+                  { label: 'Last Updated', value: formatDateTime(ticket.updated_at || ticket.created_at) },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-start justify-between gap-3 text-sm">
+                    <span className="text-gray-500 shrink-0 w-32">{label}</span>
+                    <span className="text-gray-800 text-right">{value}</span>
                   </div>
                 ))}
               </div>
             </div>
-          )}
-          <div>
-            <h3 className="text-sm font-bold text-gray-700 mb-3">Concern Description</h3>
-            <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600 border border-gray-100">{ticket.description || 'No description provided.'}</div>
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-700 mb-3">Resolution / Admin notes</h3>
-            <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600 border border-gray-100">{ticket.resolutionNotes || 'No resolution notes added yet.'}</div>
-            <div className="grid grid-cols-2 gap-4 mt-3">
-              <div><div className="text-xs font-medium text-gray-400">Resolution date</div><div className="text-sm text-gray-700">{ticket.resolutionDate ? formatDate(ticket.resolutionDate) : '—'}</div></div>
-              <div><div className="text-xs font-medium text-gray-400">Resolved by</div><div className="text-sm text-gray-700">{ticket.resolvedBy || '—'}</div></div>
+
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex-1">
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2"/>
+                </svg>
+                <h3 className="text-sm font-bold text-gray-700">Update History</h3>
+              </div>
+              {ticket.history && ticket.history.length > 0 ? (
+                <div className="space-y-4">
+                  {ticket.history.map((entry, idx) => (
+                    <div key={idx} className="flex gap-3 items-start">
+                      <div className="flex flex-col items-center shrink-0">
+                        <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${dotColors[idx % dotColors.length]}`} />
+                        {idx < ticket.history.length - 1 && (
+                          <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[15px]" />
+                        )}
+                      </div>
+                      <div className="flex-1 pb-1">
+                        <p className="text-sm font-semibold text-gray-800">{entry.action}</p>
+                        {entry.details && <p className="text-xs text-gray-500 mt-0.5">{entry.details}</p>}
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {formatDateTime(entry.date)}
+                          {entry.performedBy && entry.performedBy !== 'system' && (
+                            <span className="ml-1">· {entry.performedBy}</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No activity recorded yet.</p>
+              )}
             </div>
           </div>
-        </div>
-        <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-100 flex justify-end rounded-b-2xl">
-          <button onClick={onClose} className="px-5 py-2 bg-[#095BBC] hover:bg-[#07459e] text-white text-sm font-medium rounded-lg transition-colors shadow-sm">Close</button>
+
+          {/* RIGHT: Concern Description + Resolution Notes */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Concern Description</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed flex-1 min-h-[80px]">
+                {ticket.description || 'No description provided.'}
+              </p>
+              <button className="self-start flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors shadow-sm">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                </svg>
+                Attachment
+              </button>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex-1">
+              <h3 className="text-sm font-bold text-gray-700 mb-3">Resolution / Admin notes</h3>
+              <div className="bg-white rounded-lg p-3 border border-gray-100 text-sm text-gray-600 min-h-[80px] mb-4">
+                {ticket.resolutionNotes || <span className="text-gray-400 italic">No resolution notes added yet.</span>}
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-0.5">Resolution date</p>
+                  <p className="text-sm text-gray-700">{ticket.resolutionDate ? formatDate(ticket.resolutionDate) : ''}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-0.5">Resolved by</p>
+                  <p className="text-sm text-gray-700">{ticket.resolvedBy || ''}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Custom Select Dropdown (reused from AssignTicketsView) ────────────────
+
+// ── Custom Select Dropdown ────────────────────────────────────────────────
 function CustomSelect({ options, value, onChange, placeholder, minWidth }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef(null);
@@ -122,23 +187,7 @@ function CustomSelect({ options, value, onChange, placeholder, minWidth }) {
   );
 }
 
-// ── Mock Data (replace with real props later) ────────────────────────────
-const MOCK_TICKETS = [
-  { id: 1, code: 'TKT-2026-001', subject: 'Unclean restroom, 2nd floor', category: 'Facilities & Cleanliness', status: 'in_progress', assignedTo: 'Ms. Santos', created_at: '2026-04-30T01:00:00Z', updated_at: '2026-05-01T02:00:00Z', description: 'Restroom very dirty.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Anonymous', priority: 'high' },
-  { id: 2, code: 'TKT-2026-002', subject: 'Broken AC, HR office', category: 'Facilities & Cleanliness', status: 'open', assignedTo: 'Ms. Santos', created_at: '2026-04-28T03:00:00Z', updated_at: '2026-04-29T05:30:00Z', description: 'AC not cooling.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Jane', priority: 'high' },
-  { id: 3, code: 'TKT-2026-003', subject: 'Grade correction request', category: 'Academic Records', status: 'in_progress', assignedTo: 'Mr. Cruz', created_at: '2026-04-27T08:00:00Z', updated_at: '2026-05-02T10:00:00Z', description: 'Wrong grade posted.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Student', priority: 'urgent' },
-  { id: 4, code: 'TKT-2026-004', subject: 'Scholarship application delay', category: 'Financial / Scholarship', status: 'open', assignedTo: 'Ms. Reyes', created_at: '2026-04-26T09:00:00Z', updated_at: '2026-04-26T09:00:00Z', description: 'Waiting for approval.', history: [], resolutionNotes: '', resolutionDate: null, resolvedBy: null, submittedBy: 'Scholarship applicant', priority: 'normal' },
-  { id: 5, code: 'TKT-2026-005', subject: 'Class scheduling conflict', category: 'Enrollment / Scheduling', status: 'resolved', assignedTo: 'Ms. Santos', created_at: '2026-04-25T10:00:00Z', updated_at: '2026-05-03T11:00:00Z', description: 'Two classes overlap.', history: [], resolutionNotes: 'Resolved', resolutionDate: '2026-05-03T11:00:00Z', resolvedBy: 'Admin', submittedBy: 'Student', priority: 'high' },
-];
-
-const MOCK_STATS = {
-  total: 20,
-  inProgress: 20,
-  pending: 20,
-  resolved: 20,
-};
-
-// ── Helper: filter by date range ─────────────────────────────────────────
+// ── Helper: filter by date range ──────────────────────────────────────────
 const isWithinDateRange = (dateString, range) => {
   const date = new Date(dateString);
   const now = new Date();
@@ -150,21 +199,19 @@ const isWithinDateRange = (dateString, range) => {
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
   switch (range) {
-    case 'last7days':
-      return date >= aWeekAgo && date <= today;
-    case 'thisMonth':
-      return date >= startOfMonth && date <= today;
-    case 'lastMonth':
-      return date >= startOfLastMonth && date <= endOfLastMonth;
-    default:
-      return true;
+    case 'last7days': return date >= aWeekAgo && date <= now;
+    case 'thisMonth': return date >= startOfMonth && date <= now;
+    case 'lastMonth': return date >= startOfLastMonth && date <= endOfLastMonth;
+    default: return true;
   }
 };
 
-// ── Main Component ───────────────────────────────────────────────────────
+// ── Main Component ────────────────────────────────────────────────────────
 export default function ReportsView() {
-  const [tickets, setTickets] = useState(MOCK_TICKETS);
-  const [stats] = useState(MOCK_STATS);
+  const [tickets, setTickets] = useState([]);
+  const [stats, setStats] = useState({ total: 0, inProgress: 0, pending: 0, resolved: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -173,6 +220,51 @@ export default function ReportsView() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterStaff, setFilterStaff] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
+
+  // ── Fetch reports data from backend ──────────────────────────────────────
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await api.get('/api/admin/reports');
+
+      const { stats: rawStats, tickets: rawTickets } = res.data;
+
+      // Map tickets to internal format
+      const mapped = (rawTickets || []).map(t => ({
+        id: t.id,
+        code: t.ticket_code || 'N/A',
+        subject: t.subject || 'No Subject',
+        category: t.categories?.name || 'General',
+        status: t.status === 'In Progress' ? 'in_progress'
+              : t.status === 'Resolved' ? 'resolved'
+              : t.status === 'Closed' ? 'closed'
+              : 'open',
+        priority: t.priority?.toLowerCase() || 'normal',
+        assignedTo: t.assigned_to || '',
+        submittedBy: t.submitter_email || 'Anonymous (guest)',
+        created_at: t.created_at,
+        updated_at: t.updated_at || t.created_at,
+        description: t.description || '',
+        resolutionNotes: t.resolution_notes || '',
+        resolutionDate: t.status === 'Resolved' ? t.updated_at : null,
+        resolvedBy: t.status === 'Resolved' ? t.assigned_to : null,
+        history: t.history || []
+      }));
+
+      setTickets(mapped);
+      setStats(rawStats || { total: 0, inProgress: 0, pending: 0, resolved: 0 });
+    } catch (err) {
+      console.error('fetchReports error:', err);
+      setError('Failed to load reports. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -186,11 +278,12 @@ export default function ReportsView() {
       open: 'bg-[#E6F1FB] text-[#0D457D]',
       in_progress: 'bg-[#FAEEDA] text-[#653A08]',
       resolved: 'bg-[#EAF3DE] text-[#2A530D]',
+      closed: 'bg-gray-100 text-gray-600',
     };
     return colors[status] || colors.open;
   };
 
-  // Extract unique staff names for filter
+  // Build unique staff list from fetched data
   const uniqueStaff = ['all', ...new Set(tickets.map(t => t.assignedTo).filter(Boolean))];
 
   // Apply filters
@@ -206,21 +299,12 @@ export default function ReportsView() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterStatus, filterStaff, filterDate]);
-
+  useEffect(() => { setCurrentPage(1); }, [filterStatus, filterStaff, filterDate]);
   const goToPage = (page) => setCurrentPage(Math.max(1, Math.min(totalPages, page)));
 
-  // Check if any filter is active
   const hasActiveFilter = filterStatus !== 'all' || filterStaff !== 'all' || filterDate !== 'all';
-  const clearFilters = () => {
-    setFilterStatus('all');
-    setFilterStaff('all');
-    setFilterDate('all');
-  };
+  const clearFilters = () => { setFilterStatus('all'); setFilterStaff('all'); setFilterDate('all'); };
 
-  // Options for dropdowns
   const statusOptions = [
     { label: 'All Statuses', value: 'all' },
     { label: 'Open', value: 'open' },
@@ -240,20 +324,57 @@ export default function ReportsView() {
     { label: 'Last Month', value: 'lastMonth' },
   ];
 
-  // Stats cards (similar to dashboard but with "Pending" added)
   const statCards = [
     { title: 'Total Tickets', value: stats.total, subtitle: 'All time', circleColor: '#71437D', numberColor: '#71437D', bgColor: '#F4E4F8' },
-    { title: 'In progress', value: stats.inProgress, subtitle: 'Being handled', circleColor: '#FA9E01', numberColor: '#653A08', bgColor: '#FAEEDA' },
-    { title: 'Pending', value: stats.pending, subtitle: 'no recent update', circleColor: '#0D457D', numberColor: '#0D457D', bgColor: '#E6F1FB' },
+    { title: 'In Progress', value: stats.inProgress, subtitle: 'Being handled', circleColor: '#FA9E01', numberColor: '#653A08', bgColor: '#FAEEDA' },
+    { title: 'Pending', value: stats.pending, subtitle: 'No recent update', circleColor: '#0D457D', numberColor: '#0D457D', bgColor: '#E6F1FB' },
     { title: 'Resolved', value: stats.resolved, subtitle: 'Completed', circleColor: '#49A821', numberColor: '#2A530D', bgColor: '#EAF3DE' },
   ];
+
+  // ── Loading state ─────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-500 text-sm">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ───────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 text-sm mb-3">{error}</p>
+          <button onClick={fetchReports} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Reports</h1>
-        <p className="text-sm text-gray-500 mt-1">Monitor and track the progress of assigned tickets.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Reports</h1>
+          <p className="text-sm text-gray-500 mt-1">Monitor and track the progress of all tickets.</p>
+        </div>
+        <button
+          onClick={fetchReports}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          title="Refresh data"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -310,17 +431,17 @@ export default function ReportsView() {
                 paginatedTickets.map((ticket) => (
                   <tr key={ticket.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">{ticket.code}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{ticket.subject}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 max-w-[200px] truncate">{ticket.subject}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{ticket.category}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium min-w-[90px] ${getStatusBadge(ticket.status)}`}>
                         {ticket.status === 'in_progress' ? 'In Progress' : ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(ticket.updated_at || ticket.created_at)}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatDate(ticket.updated_at || ticket.created_at)}
+                      {ticket.assignedTo || <span className="text-red-400 italic">Unassigned</span>}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{ticket.assignedTo || 'Unassigned'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         className="text-gray-500 hover:text-blue-600 transition-colors"
@@ -340,9 +461,10 @@ export default function ReportsView() {
           </table>
         </div>
 
+        {/* Pagination */}
         <div className="bg-gray-50/30 px-6 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs text-gray-500">
-            Showing {filteredTickets.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTickets.length)} of {filteredTickets.length} active tickets
+            Showing {filteredTickets.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTickets.length)} of {filteredTickets.length} tickets
           </div>
           <div className="flex items-center gap-1.5">
             <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50">‹</button>
