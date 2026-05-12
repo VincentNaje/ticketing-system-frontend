@@ -1,7 +1,18 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, ArrowRight } from 'lucide-react';
 
 const HomePage = () => {
+  const navigate = useNavigate();
+
+  const handleStaffLogin = () => {
+    navigate('/staff-home');
+  };
+
+  const handleTrackTicket = () => {
+    navigate('/track-ticket');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-200 via-blue-200 to-blue-300">
       
@@ -11,20 +22,30 @@ const HomePage = () => {
         {/* Logo */}
         <div className="flex items-center">
           <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md">
+            
             <img 
               src="/src/assets/bucenglogo.png" 
               alt="Logo" 
               className="w-12 h-12 rounded-full object-cover"
             />
           </div>
+          <h6 className="px-6 text-2xl font-medium text-white mb-1">
+              BUCENG Complaint and Ticketing System
+          </h6>
         </div>
 
         {/* Right side buttons */}
         <div className="flex items-center gap-4">
-          <button className="px-4 py-2 border-2 border-white text-white rounded-md hover:bg-white/10 transition-colors font-medium">
+          <button 
+            onClick={handleTrackTicket}
+            className="px-4 py-2 border-2 border-white text-white rounded-md hover:bg-white/10 transition-colors font-medium"
+          >
             Track ticket
           </button>
-          <button className="px-6 py-2 bg-white text-orange-600 rounded-md hover:bg-gray-100 transition-colors font-medium flex items-center gap-2 shadow-md">
+          <button 
+            onClick={handleStaffLogin}
+            className="px-6 py-2 bg-white text-orange-600 rounded-md hover:bg-gray-100 transition-colors font-medium flex items-center gap-2 shadow-md"
+          >
             <User size={20} />
             Staff login
           </button>
