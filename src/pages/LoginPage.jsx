@@ -25,7 +25,7 @@ export default function LoginPage() {
         navigate('/staff');
       }
     } else {
-      setError(result.message || 'Login failed. Please try again.');
+      setError(result.message || 'Login failed. Please try again..');
     }
 
     setLoading(false);
