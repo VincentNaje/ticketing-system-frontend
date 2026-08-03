@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ArrowRight } from 'lucide-react';
+import bucengLogo from '../../assets/bucenglogo.png';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const HomePage = () => {
           <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md">
             
             <img 
-              src="/src/assets/bucenglogo.png" 
+             src={bucengLogo}
               alt="Logo" 
               className="w-12 h-12 rounded-full object-cover"
             />
