@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import ticketService from '../../services/ticketService';
 import toast from 'react-hot-toast';
+import bucengLogo from '../../assets/bucenglogo.png';
 
 const GuestSubmission = () => {
     const navigate = useNavigate();
@@ -105,7 +106,7 @@ const GuestSubmission = () => {
                 <div className="flex items-center gap-3">
                     <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md">
                         <img
-                            src="/src/assets/bucenglogo.png"
+                            src={bucengLogo}
                             alt="Logo"
                             className="w-12 h-12 rounded-full object-cover"
                         />

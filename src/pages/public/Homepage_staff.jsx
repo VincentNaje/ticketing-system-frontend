@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import bucengLogo from '../../assets/bucenglogo.png';
+import staffLogo from '../../assets/Staff.png';
 
 const Homepage_staff = () => {
     const [email, setEmail] = useState('');
@@ -59,7 +61,7 @@ const Homepage_staff = () => {
                 <div className="flex items-center gap-3">
                     <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md">
                         <img
-                            src="/src/assets/bucenglogo.png"
+                            src={bucengLogo}
                             alt="Logo"
                             className="w-12 h-12 rounded-full object-cover"
                         />
@@ -96,7 +98,7 @@ const Homepage_staff = () => {
                         <div className="relative">
                             <div className="flex items-end justify-center gap-1">
                                 <img
-                                    src="/src/assets/Staff.png"
+                                    src={staffLogo}
                                     alt="Logo"
                                     className="w-12 h-12 rounded-full object-cover"
                                 />
