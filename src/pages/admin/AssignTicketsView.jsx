@@ -511,7 +511,7 @@ export default function AssignTicketsView() {
   const hasActiveFilter = filterCategory !== 'all' || filterStatus !== 'all' || filterPriority !== 'all';
 
   const getStatusBadge = (status) => {
-    const colors = {
+     const colors = {
       open: 'bg-[#E6F1FB] text-[#0D457D]',
       in_progress: 'bg-[#FAEEDA] text-[#653A08]',
       resolved: 'bg-[#EAF3DE] text-[#2A530D]',
